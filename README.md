@@ -290,7 +290,7 @@ Confirm:
 - status file is written:
   `/var/lib/update-all-mirrors-weekly/last_run.status`
 
-------------------------------------------------------------
+
 2) Test the manual GUI wrapper
 ------------------------------------------------------------
 
@@ -308,7 +308,7 @@ Confirm:
 - backend worker completes
 - optional pacman -Syyu prompt works
 
-------------------------------------------------------------
+
 3) Test the login service manually
 ------------------------------------------------------------
 
@@ -327,7 +327,7 @@ Confirm:
 - state file updates:
  ` ~/.local/state/update-all-mirrors/last_run_week`
 
-------------------------------------------------------------
+
 4) Test actual login behavior
 ------------------------------------------------------------
 
@@ -339,9 +339,8 @@ Confirm:
 - if week changed (or state file removed):
   - service runs again
 
-============================================================
-HOW TO FORCE A RE-TEST OF WEEKLY LOGIN
-============================================================
+
+### HOW TO FORCE A RE-TEST OF WEEKLY LOGIN
 
 If you want to simulate "not run yet this week", remove the user week stamp:
 
@@ -357,9 +356,9 @@ vice
 
 This forces the wrapper to treat the week as not yet completed.
 
-============================================================
-KNOWN EXPECTED BEHAVIOR
-============================================================
+
+### KNOWN EXPECTED BEHAVIOR
+
 
 1) The manual GUI may show a polkit / auth prompt
    - this is normal
@@ -375,9 +374,9 @@ KNOWN EXPECTED BEHAVIOR
    - only after mirrors refresh successfully
    - and only if the user explicitly says yes
 
-============================================================
+
 WHY pacman -Syyu IS OFFERED AFTER MIRROR CHANGES
-============================================================
+
 
 After changing mirrors, using:
 
@@ -391,9 +390,8 @@ is recommended because:
 
 This is especially useful immediately after changing mirrorlists.
 
-============================================================
-REBOOT GUIDANCE
-============================================================
+
+## REBOOT GUIDANCE
 
 A reboot is NOT always required after pacman -Syyu.
 
@@ -404,9 +402,8 @@ A reboot is recommended if the upgrade included:
 - systemd / glibc
 - nvidia or other kernel module / graphics stack updates
 
-============================================================
-WAYLAND / KDE PLASMA NOTES
-============================================================
+## WAYLAND / KDE PLASMA NOTES
+
 
 This design is intended for KDE Plasma and works well on Wayland.
 
@@ -427,11 +424,10 @@ For testing on an older machine:
 If Plasma Wayland is stable enough on the test box generally,
 this utility should be trivial for it.
 
-============================================================
-UNINSTALL
-============================================================
 
-Make the uninstall script executable:
+UNINSTALL
+
+make the uninstall script executable:
 
 ```bash
 chmod +x uninstall_mirror_update_gui_for_dave.sh
@@ -457,13 +453,12 @@ It does NOT remove:
 Optional cleanup after uninstall:
 - remove the sudoers rule if you no longer want silent weekly login runs
 
-============================================================
-TROUBLESHOOTING
-============================================================
 
-------------------------------------------------------------
-Manual GUI opens but fails immediately
-------------------------------------------------------------
+## TROUBLESHOOTING
+
+
+### Manual GUI opens but fails immediately
+
 
 Check:
 
@@ -471,9 +466,9 @@ Check:
   command -v pkexec
   command -v firefox
 
-------------------------------------------------------------
-Manual GUI cannot elevate / pkexec fails
-------------------------------------------------------------
+
+### Manual GUI cannot elevate / pkexec fails
+
 
 Check:
 - polkit is installed
@@ -482,9 +477,9 @@ Check:
 
   command -v pkexec
 
-------------------------------------------------------------
-Weekly login wrapper prompts for password
-------------------------------------------------------------
+
+### Weekly login wrapper prompts for password
+
 
 The sudoers rule is missing or incorrect.
 
@@ -507,7 +502,7 @@ Also confirm the service was started inside the user graphical session.
 
 ---
 
-## Weekly login wrapper did not run
+### Weekly login wrapper did not run
 
 Check user service status:
  
@@ -527,7 +522,7 @@ ls -l ~/.local/state/update-all-mirrors/
 ```
 ---
 
-## Backend worker failed
+### Backend worker failed
 
 Check:
 
