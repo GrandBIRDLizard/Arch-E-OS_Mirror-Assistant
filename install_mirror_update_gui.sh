@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Arch & EOS Mirror Assistant installer (DEV TEST MODE)
+# Arch & EOS Mirror Assistant installer
 # By GrandBIRDLizard
 
 set -euo pipefail
@@ -43,8 +43,8 @@ die() {
 [[ -x "$WORKER_SCRIPT" ]] || die "Missing worker script: $WORKER_SCRIPT"
 
 if [[ ! -x "$CLI_FALLBACK" ]]; then
-  warn "Guided CLI mode script not found: $CLI_FALLBACK"
-  warn "Continuing anyway (GUI modes will still work)."
+  warn "CLI fallback script not found: $CLI_FALLBACK"
+  warn "Continuing anyway (GUI wrappers will still work)."
 fi
 
 command -v systemctl >/dev/null 2>&1 || die "systemctl not found."
@@ -63,7 +63,7 @@ mkdir -p "$DESKTOP_DIR"
 info "Writing manual guided GUI wrapper..."
 cat > "$GUIDED_GUI" <<'EOF'
 #!/usr/bin/bash
-# Arch & EOS Mirror Assistant manual GUI (DEV TEST MODE)
+# Arch & EOS Mirror Assistant manual GUI
 # Uses kdialog for dialogs and pkexec for root actions
 # By GrandBIRDLizard
 
@@ -128,54 +128,47 @@ Before a full system upgrade on Arch / EndeavourOS, check for manual interventio
 
 You will now be offered quick links for:
 - Arch Linux News
-- EndeavourOS News / Forum
-
-DEV TEST MODE is active.
-The backend will write to /tmp/update-all-mirrors-test instead of live system mirrorlists."
+- EndeavourOS News / Forum"
 
 open_news_menu
 
 # Ask to refresh mirrors
-if ! kdialog --title "$APP_TITLE" --warningyesno "Refresh Arch + EndeavourOS mirrors now?
-
-DEV TEST MODE is active."; then
+if ! kdialog --title "$APP_TITLE" --warningyesno "Refresh Arch + EndeavourOS mirrors now?"; then
   kdialog --title "$APP_TITLE" --sorry "Mirror refresh canceled."
   exit 0
 fi
 
-kdialog --title "$APP_TITLE" --passivepopup "Refreshing mirrors in TEST_MODE..." 4 >/dev/null 2>&1 || true
+kdialog --title "$APP_TITLE" --passivepopup "Refreshing mirrors..." 4 >/dev/null 2>&1 || true
 
-# Run the root worker in TEST_MODE
-if pkexec env TEST_MODE=1 "$WORKER_SCRIPT"; then
+# Run the root worker
+if pkexec "$WORKER_SCRIPT"; then
   info_gui "Mirror refresh completed successfully.
 
-DEV TEST MODE was used.
+Your mirrorlists were updated.
 
-Test mirrorlists were updated under:
-  /tmp/update-all-mirrors-test
-
-Because mirrors just changed, the recommended real upgrade command would be:
+Because mirrors just changed, the recommended upgrade command is:
 sudo pacman -Syyu"
 else
   die_gui "Mirror refresh failed.
 
 Check:
-- /tmp/update-all-mirrors-test/status/last_run.status"
+- ~/.local/state/update-all-mirrors/last_run.log
+- /var/lib/update-all-mirrors-weekly/last_run.status"
 fi
 
 # Ask whether to run a full upgrade now
-if kdialog --title "$APP_TITLE" --warningyesno "Mirrors were refreshed successfully in DEV TEST MODE.
+if kdialog --title "$APP_TITLE" --warningyesno "Mirrors were refreshed successfully.
 
-Do you want to run a REAL full upgrade now?
+Do you want to run a full upgrade now?
 
-Recommended after real mirror changes:
+Recommended after mirror changes:
 sudo pacman -Syyu"; then
 
   if kdialog --title "$APP_TITLE" --yesno "Open Arch / EndeavourOS news pages in Firefox before upgrading?"; then
     open_news_menu
   fi
 
-  kdialog --title "$APP_TITLE" --passivepopup "Running REAL pacman -Syyu..." 4 >/dev/null 2>&1 || true
+  kdialog --title "$APP_TITLE" --passivepopup "Running pacman -Syyu..." 4 >/dev/null 2>&1 || true
 
   if pkexec "$PACMAN_BIN" -Syyu; then
     info_gui "System upgrade completed.
@@ -195,7 +188,7 @@ Resolve any pacman issues before retrying."
 else
   info_gui "Upgrade skipped.
 
-When you are ready, the real command is:
+When you are ready, run:
 
 sudo pacman -Syyu"
 fi
@@ -210,7 +203,7 @@ ok "Wrote: $GUIDED_GUI"
 info "Writing weekly login GUI wrapper..."
 cat > "$LOGIN_GUI" <<'EOF'
 #!/usr/bin/bash
-# Weekly mirror refresh at login (GUI wrapper for Plasma, DEV TEST MODE)
+# Weekly mirror refresh at login (GUI wrapper for Plasma)
 # Runs once per ISO week, only when user logs in
 # Uses sudo for silent root execution (requires exact NOPASSWD rule)
 # By GrandBIRDLizard
@@ -232,14 +225,14 @@ CURRENT_WEEK="$(date '+%G-%V')"
 notify_ok() {
   notify-send \
     "Arch + EOS Mirror Assistant" \
-    "DEV TEST MODE: Arch + EndeavourOS mirrors were refreshed successfully this week (test targets only)." \
+    "Arch + EndeavourOS mirrors were refreshed successfully this week." \
     --icon=system-software-update
 }
 
 notify_fail() {
   notify-send \
     "Arch + EOS Mirror Assistant" \
-    "DEV TEST MODE: Mirror refresh failed. Check /tmp/update-all-mirrors-test/status/last_run.status" \
+    "Mirror refresh failed. Check logs or status files." \
     --icon=dialog-error
 }
 
@@ -265,13 +258,13 @@ if [[ -f "$STAMP_FILE" ]] && [[ "$(cat "$STAMP_FILE")" == "$CURRENT_WEEK" ]]; th
   exit 0
 fi
 
-# Run root worker silently via sudo in TEST_MODE
-if sudo TEST_MODE=1 "$WORKER_SCRIPT" >> "$LOG_FILE" 2>&1; then
+# Run root worker silently via sudo
+if sudo "$WORKER_SCRIPT" >> "$LOG_FILE" 2>&1; then
   printf '%s' "$CURRENT_WEEK" > "$STAMP_FILE"
-  printf '%s :: success (DEV TEST MODE)\n' "$(date '+%F %T')" >> "$LOG_FILE"
+  printf '%s :: success\n' "$(date '+%F %T')" >> "$LOG_FILE"
   notify_ok
 else
-  printf '%s :: FAILED (DEV TEST MODE)\n' "$(date '+%F %T')" >> "$LOG_FILE"
+  printf '%s :: FAILED\n' "$(date '+%F %T')" >> "$LOG_FILE"
   notify_fail
   exit 1
 fi
@@ -284,7 +277,7 @@ ok "Wrote: $LOGIN_GUI"
 info "Writing user systemd service..."
 cat > "$USER_SERVICE" <<'EOF'
 [Unit]
-Description=Arch + EOS Mirror Assistant weekly mirror refresh at graphical login (DEV TEST MODE)
+Description=Arch + EOS Mirror Assistant weekly mirror refresh at graphical login
 After=graphical-session.target
 Wants=graphical-session.target
 
@@ -303,7 +296,7 @@ Version=1.0
 Type=Application
 Name=Arch + EOS Mirror Assistant
 GenericName=Arch + EOS Mirror Assistant
-Comment=Guided Arch and EndeavourOS mirror refresh with optional full upgrade (DEV TEST MODE)
+Comment=Guided Arch and EndeavourOS mirror refresh with optional full upgrade
 Exec=${GUIDED_GUI}
 Icon=system-software-update
 Terminal=false
@@ -328,7 +321,7 @@ systemctl --user enable update-all-mirrors-login-gui.service >/dev/null
 
 # Final summary
 echo
-ok "DEV install complete for user: $USER_NAME"
+ok "Install complete for user: $USER_NAME"
 echo
 echo "Installed files:"
 echo "  $GUIDED_GUI"
@@ -336,33 +329,18 @@ echo "  $LOGIN_GUI"
 echo "  $USER_SERVICE"
 echo "  $DESKTOP_FILE"
 echo
-echo "This DEV build forces TEST_MODE=1 for GUI-driven mirror refreshes."
-echo "Test mirror files will be written under:"
-echo "  /tmp/update-all-mirrors-test"
-echo
-echo "Available ways to test Arch + EOS Mirror Assistant:"
-echo
-echo "  1) GUI launcher (recommended)"
-echo "     Launch from the Plasma app launcher:"
-echo "       Arch + EOS Mirror Assistant"
-echo "     Or run directly:"
-echo "       $GUIDED_GUI"
-echo
-echo "  2) Weekly automatic mirror refresh at login (DEV TEST MODE)"
-echo "     This runs once per ISO week after graphical login."
-echo "     It refreshes TEST mirror targets only and sends a desktop notification."
-echo "     Test it now with:"
-echo "       systemctl --user start update-all-mirrors-login-gui.service"
-echo
-echo "  3) Guided CLI mode (manual terminal fallback / on-demand use)"
-echo "     Safe dev test command:"
-echo "       sudo TEST_MODE=1 SKIP_UPGRADE=1 /usr/local/bin/update_all_mirrors_prompt_upgrade.sh"
-echo
 warn "IMPORTANT:"
-echo "  This DEV installer assumes your backend worker supports TEST_MODE=1."
-echo "  If your backend does NOT support TEST_MODE, do NOT use the GUI wrappers yet."
+echo "  The weekly login GUI uses:"
+echo "    sudo /usr/local/bin/update_all_mirrors_weekly.sh"
 echo
-echo "Optional note:"
-echo "  The guided GUI still uses pkexec for root actions."
-echo "  In this DEV build, only the mirror refresh step is forced into TEST_MODE."
-echo "  If you choose the upgrade step, pacman -Syyu is still REAL."
+echo "  Make sure you added the exact visudo rule:"
+echo "    $USER_NAME ALL=(root) NOPASSWD: /usr/local/bin/update_all_mirrors_weekly.sh"
+echo
+echo "Test the weekly login wrapper now:"
+echo "  systemctl --user start update-all-mirrors-login-gui.service"
+echo
+echo "Launch the manual GUI now:"
+echo "  $GUIDED_GUI"
+echo
+echo "Or from the Plasma app launcher:"
+echo "  Arch + EOS Mirror Assistant"

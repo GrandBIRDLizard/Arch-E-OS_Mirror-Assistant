@@ -63,7 +63,7 @@ Purpose:
 Purpose:
 - Starts the weekly login GUI wrapper at graphical login
 
-4. Plasma app launcher (.desktop file)
+Plasma app launcher (.desktop file):
    `~/.local/share/applications/update-all-mirrors-guided.desktop`
 
 Purpose:
@@ -125,7 +125,7 @@ Run:
 
 Add EXACTLY:
 
--  `YOURUSER ALL=(root) NOPASSWD: /usr/local/bin/update_all_mirrors_weekly.sh`
+-  `YOURUSERNSME ALL=(root) NOPASSWD: /usr/local/bin/update_all_mirrors_weekly.sh`
 
 Example:
 
@@ -148,11 +148,11 @@ It does NOT grant general passwordless sudo.
 
 3. Make the installer executable:
 
-- `chmod +x install_mirror_update_gui_for_dave.sh`
+- `chmod +x install_mirror_update_gui.sh`
 
 4.  Run the installer as the NORMAL USER (not root):
 
-- `./install_mirror_update_gui_for_dave.sh`
+- `./install_mirror_update_gui.sh`
 
 The installer will:
 
@@ -242,7 +242,7 @@ Important files:
 
 - stores the last ISO week that completed successfully
 
-2. `last_run.log`
+ `last_run.log`
 
 - logs attempts / success / failure lines
 
@@ -280,13 +280,15 @@ Recommended initial tests on a Plasma Wayland machine:
 
 Run:
 
+  ```bash
   sudo /usr/local/bin/update_all_mirrors_weekly.sh
+  ```
 
 Confirm:
 - mirrors update successfully
 - backup files rotate
 - status file is written:
-  /var/lib/update-all-mirrors-weekly/last_run.status
+  `/var/lib/update-all-mirrors-weekly/last_run.status`
 
 ------------------------------------------------------------
 2) Test the manual GUI wrapper
@@ -294,7 +296,10 @@ Confirm:
 
 Run:
 
+
+```bash
   ~/.local/bin/update_all_mirrors_guided_gui.sh
+  ```
 
 Confirm:
 - KDialog opens
@@ -309,14 +314,18 @@ Confirm:
 
 Run:
 
-  systemctl --user start update-all-mirrors-login-gui.service
+
+```bash
+systemctl --user start update-all-mirrors-login-gui.
+ervice
+  ```  
 
 Confirm:
 - no password prompt (if sudoers rule is correct)
 - mirror refresh runs
 - desktop notification appears
 - state file updates:
-  ~/.local/state/update-all-mirrors/last_run_week
+ ` ~/.local/state/update-all-mirrors/last_run_week`
 
 ------------------------------------------------------------
 4) Test actual login behavior
@@ -336,11 +345,15 @@ HOW TO FORCE A RE-TEST OF WEEKLY LOGIN
 
 If you want to simulate "not run yet this week", remove the user week stamp:
 
-  rm -f ~/.local/state/update-all-mirrors/last_run_week
-
+```bash  
+rm -f ~/.local/state/update-all-mirrors/last_run_week
+```
 Then run:
 
-  systemctl --user start update-all-mirrors-login-gui.service
+```bash
+systemctl --user start update-all-mirrors-login-gui.se
+vice
+```
 
 This forces the wrapper to treat the week as not yet completed.
 
@@ -420,23 +433,26 @@ UNINSTALL
 
 Make the uninstall script executable:
 
-  chmod +x uninstall_mirror_update_gui_for_dave.sh
-
+```bash
+chmod +x uninstall_mirror_update_gui_for_dave.sh
+```
 Run:
 
-  ./uninstall_mirror_update_gui_for_dave.sh
+```bash
+./uninstall_mirror_update_gui_for_dave.sh
+```
 
 This removes:
 
-- ~/.local/bin/update_all_mirrors_guided_gui.sh
-- ~/.local/bin/update_all_mirrors_login_gui.sh
-- ~/.config/systemd/user/update-all-mirrors-login-gui.service
-- ~/.local/share/applications/update-all-mirrors-guided.desktop
+- `~/.local/bin/update_all_mirrors_guided_gui.sh`
+- `~/.local/bin/update_all_mirrors_login_gui.sh`
+- `~/.config/systemd/user/update-all-mirrors-login-gui.service`
+- `~/.local/share/applications/update-all-mirrors-guided.desktop`
 
 It does NOT remove:
 
-- /usr/local/bin/update_all_mirrors_weekly.sh
-- /usr/local/bin/update_all_mirrors_prompt_upgrade.sh
+- `/usr/local/bin/update_all_mirrors_weekly.sh`
+- `/usr/local/bin/update_all_mirrors_prompt_upgrade.sh`
 
 Optional cleanup after uninstall:
 - remove the sudoers rule if you no longer want silent weekly login runs
@@ -478,7 +494,7 @@ Check with:
 
 Make sure the exact allowed command is:
 
-  /usr/local/bin/update_all_mirrors_weekly.sh
+`/usr/local/bin/update_all_mirrors_weekly.sh`
 
 Weekly login wrapper does not notify
 

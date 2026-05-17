@@ -1,26 +1,17 @@
 #!/usr/bin/env bash
-# Arch & EOS Mirror Assistant guided CLI mode
+# Mirror refresh with optional full upgrade prompt
 # By GrandBIRDLizard
 
 set -euo pipefail
 
+# -------------------------------------------------------------------
 # Config
-TEST_MODE="${TEST_MODE:-0}"
-SKIP_UPGRADE="${SKIP_UPGRADE:-0}"
+# -------------------------------------------------------------------
 
-if [[ "$TEST_MODE" == "1" ]]; then
-  TEST_ROOT="/tmp/update-all-mirrors-test"
+ARCH_MIRRORLIST="/etc/pacman.d/mirrorlist"
+EOS_MIRRORLIST="/etc/pacman.d/endeavouros-mirrorlist"
 
-  ARCH_MIRRORLIST="${TEST_ROOT}/mirrorlist"
-  EOS_MIRRORLIST="${TEST_ROOT}/endeavouros-mirrorlist"
-
-  BACKUP_DIR="${TEST_ROOT}/backups"
-else
-  ARCH_MIRRORLIST="/etc/pacman.d/mirrorlist"
-  EOS_MIRRORLIST="/etc/pacman.d/endeavouros-mirrorlist"
-
-  BACKUP_DIR="/var/backups/pacman-mirrorlists"
-fi
+BACKUP_DIR="/var/backups/pacman-mirrorlists"
 
 ARCH_BACKUP="${BACKUP_DIR}/mirrorlist.last"
 EOS_BACKUP="${BACKUP_DIR}/endeavouros-mirrorlist.last"
@@ -38,7 +29,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# -------------------------------------------------------------------
 # Helpers
+# -------------------------------------------------------------------
+
 info() {
   printf '[*] %s\n' "$*"
 }
@@ -72,37 +66,28 @@ prompt_yes_no() {
     read -r -p "$prompt [y/n]: " reply
     case "${reply,,}" in
       y|yes) return 0 ;;
-      n|no) return 1 ;;
-      *) echo "Please answer y or n." ;;
+      n|no)  return 1 ;;
+      *)     echo "Please answer y or n." ;;
     esac
   done
 }
 
+# -------------------------------------------------------------------
 # Safety checks
+# -------------------------------------------------------------------
+
 [[ "${EUID}" -eq 0 ]] || die "This script must be run as root. Use: sudo $0"
 command -v rate-mirrors >/dev/null 2>&1 || die "rate-mirrors is not installed."
 command -v pacman >/dev/null 2>&1 || die "pacman not found."
 
 mkdir -p "$BACKUP_DIR"
 
-if [[ "$TEST_MODE" == "1" ]]; then
-  mkdir -p "$TEST_ROOT"
-
-  if [[ ! -f "$ARCH_MIRRORLIST" ]]; then
-    cp -f /etc/pacman.d/mirrorlist "$ARCH_MIRRORLIST"
-  fi
-
-  if [[ ! -f "$EOS_MIRRORLIST" ]]; then
-    : > "$EOS_MIRRORLIST"
-  fi
-
-  warn "TEST_MODE=1 active"
-  warn "Using test root: $TEST_ROOT"
-fi
-
 info "Starting mirror refresh at: $TIMESTAMP"
 
+# -------------------------------------------------------------------
 # Rotating backups (single-file backups, no pile-up)
+# -------------------------------------------------------------------
+
 if [[ -f "$ARCH_MIRRORLIST" ]]; then
   cp -f "$ARCH_MIRRORLIST" "$ARCH_BACKUP"
   cat > "$ARCH_BACKUP_NOTE" <<EOF
@@ -137,7 +122,10 @@ fi
 
 dot_pause
 
+# -------------------------------------------------------------------
 # Generate fresh mirrorlists (no country restriction)
+# -------------------------------------------------------------------
+
 info "Ranking Arch mirrors (best available, no country restriction)..."
 rate-mirrors \
   --protocol https \
@@ -153,7 +141,10 @@ rate-mirrors \
 
 dot_pause
 
+# -------------------------------------------------------------------
 # Install fresh mirrorlists
+# -------------------------------------------------------------------
+
 install -m 644 "$TMP_ARCH" "$ARCH_MIRRORLIST"
 install -m 644 "$TMP_EOS" "$EOS_MIRRORLIST"
 
@@ -162,7 +153,10 @@ ok "Installed new EndeavourOS mirrorlist -> $EOS_MIRRORLIST"
 
 dot_pause
 
+# -------------------------------------------------------------------
 # Advise before upgrade
+# -------------------------------------------------------------------
+
 echo
 warn "Before running a full upgrade, check for manual intervention notices."
 echo "    Arch Linux News:        https://archlinux.org/news/"
@@ -173,15 +167,10 @@ echo "    -yy forces a full database refresh against the NEW mirrors"
 echo "    This helps avoid stale metadata / partial-sync issues."
 echo
 
-# Optional test-mode safety stop
-if [[ "$SKIP_UPGRADE" == "1" ]]; then
-  warn "SKIP_UPGRADE=1 active. Skipping pacman -Syyu prompt."
-  echo
-  ok "Done."
-  exit 0
-fi
-
+# -------------------------------------------------------------------
 # Optional full refresh + upgrade
+# -------------------------------------------------------------------
+
 if prompt_yes_no "Run pacman -Syyu now?"; then
   info "Running pacman -Syyu ..."
   pacman -Syyu
