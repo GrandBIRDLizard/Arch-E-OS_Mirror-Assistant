@@ -1,6 +1,9 @@
 # GUI for Arch & EOS Update Assistant
 ### By GrandBIRDLizard
 
+
+<img width="250" height="150" alt="AEOS" src="https://github.com/user-attachments/assets/8a9a746b-c419-489c-bf82-fb1c231580e6" />
+
 ---
 
 ## OVERVIEW
